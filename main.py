@@ -1,8 +1,6 @@
 import queue
 import random
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 
 k=input('Enter the buffer size:')
 k=int(k)+1
@@ -17,6 +15,10 @@ ans2_3=[]
 ans3_1=[]
 ans3_2=[]
 ans3_3=[]
+ans4_1=[]
+ans4_2=[]
+ans4_3=[]
+
 for i in range(5):
     q=queue.Queue(k)
     q2=queue.Queue(k)
@@ -52,7 +54,7 @@ for i in range(5):
             if(t_record2<t_record1):
                 q.get()
                 pkt_delay1[q1_processed]=t_record2-pkt_delay1[q1_processed]
-                if(q1_processed==500):
+                if(q1_processed==int(1000*prob_1)):
                     timecount1=t_record2
                 q.task_done()
                 q1_processed+=1
@@ -67,7 +69,7 @@ for i in range(5):
             if(t_record2_2<t_record1):
                 q2.get()
                 pkt_delay2[q2_processed]=t_record2_2-pkt_delay2[q2_processed]
-                if(q2_processed==500):
+                if(q2_processed==1000-int(1000*prob_1)):
                     timecount2=t_record2_2
                 q2.task_done()
                 q2_processed+=1
@@ -96,21 +98,27 @@ for i in range(5):
     ans1_1=ans1_1+[1-(q1_processed+q2_processed)/(count-q.qsize()-q2.qsize())]
     ans1_2=ans1_2+[1-(q1_processed/(count1-q.qsize()))]
     ans1_3=ans1_3+[1-(q2_processed/(count2_1-q2.qsize()))]
-    ans2_1=ans2_1+[sum(pkt_delay1[500:-k])/(len(pkt_delay1)-500-k)]
-    ans2_2=ans2_2+[sum(pkt_delay2[500:-k])/(len(pkt_delay2)-500-k)]
-    ans2_3=[]
-    ans3_1=ans3_1+[(q1_processed+q2_processed)/t_record1]
-    ans3_2=ans3_2+[q1_processed/t_record1]
-    ans3_3=ans3_3+[q2_processed/t_record1]
+    ans2_1=ans2_1+[sum(pkt_delay1[int(1000*prob_1):-k])/(len(pkt_delay1)-int(1000*prob_1)-k)]
+    ans2_2=ans2_2+[sum(pkt_delay2[1000-int(1000*prob_1):-k])/(len(pkt_delay2)-1000+int(1000*prob_1)-k)]
+    ans2_3=ans2_3+[ans2_1[-1]*(len(pkt_delay1)-500-k)/(len(pkt_delay1)-500-k+len(pkt_delay2)-500-k)+ans2_2[-1]*(len(pkt_delay2)-500-k)/(len(pkt_delay1)-500-k+len(pkt_delay2)-500-k)]
+    ans3_1=ans3_1+[(q1_processed-int(1000*prob_1)+q.qsize())/(t_record1-timecount1)]
+    ans3_2=ans3_2+[(q2_processed-1000+int(1000*prob_1)+q2.qsize())/(t_record1-timecount2)]
+    ans3_3=ans3_3+[ans3_1[-1]+ans3_2[-1]]
+    ans4_1=ans4_1+[ans2_1[-1]*rate_l*prob_1*(1-ans1_2[-1])]
+    ans4_2=ans4_2+[ans2_2[-1]*rate_l*(1-prob_1)*(1-ans1_3[-1])]
+    
+    
             
 print("Total packets:",count, "packets going to q1:",count1,"q1 processed packets",q1_processed,"packets going to q2",count2_1,"q2 processed packets",q2_processed,c)
-print("system blocking prob:", np.mean(ans1_1))
 print("queue 1 blocking prob:",np.mean(ans1_2))
 print("queue 2 blocking prob:",np.mean(ans1_3))
+print("system blocking prob:", np.mean(ans1_1))
 print("average delay for queue1:",np.mean(ans2_1))
 print("average delay for queue2:",np.mean(ans2_2))
-print("throughput in the system:", np.mean(ans3_1))
+print("throughput in the system:", np.mean(ans3_3))
 print("throughput in queue 1:",np.mean(ans3_2))
-print("throughput in queue 2:",np.mean(ans3_3))
-print("average number of packets in queue1",sum(pkt_delay1[500:])/(t_record1-timecount1))
-print("average number of packets in queue2",sum(pkt_delay2[500:])/(t_record1-timecount2))
+print("throughput in queue 2:",np.mean(ans3_1))
+print("average delay for system:",np.mean(ans2_3))
+print("average number of packets in queue1",np.mean(ans4_1))
+print("average number of packets in queue2",np.mean(ans4_2))
+print("average number of packets in system",np.mean(ans4_1)+np.mean(ans4_2))
